@@ -1,4 +1,4 @@
-package controllers
+package handlers
 
 import (
 	"net/http"
@@ -35,7 +35,7 @@ func RefreshTokenHandler(w http.ResponseWriter, r *http.Request) {
 		w.WriteHeader(http.StatusBadRequest)
 		return
 	}
-	if time.Unix(claims.ExpiresAt.Unix(), 0).Sub(time.Now()) > 30*time.Second {
+	if time.Until(time.Unix(claims.ExpiresAt.Unix(), 0)) > 30*time.Second {
 		w.WriteHeader(http.StatusBadRequest)
 		return
 	}

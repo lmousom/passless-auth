@@ -1,0 +1,121 @@
+{
+  "info": {
+    "name": "Passless Auth",
+    "description": "API collection for passwordless authentication system with security features",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "item": [
+    {
+      "name": "Send OTP",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          },
+          {
+            "key": "X-Request-ID",
+            "value": "{{$guid}}"
+          }
+        ],
+        "url": {
+          "raw": "http://localhost:8080/api/v1/sendOtp",
+          "protocol": "http",
+          "host": ["localhost"],
+          "port": "8080",
+          "path": ["api", "v1", "sendOtp"]
+        },
+        "body": {
+          "mode": "raw",
+          "raw": "{\n\t\"phone\": \"+1234567890\"\n}"
+        },
+        "description": "Rate limited to 20 requests per minute"
+      }
+    },
+    {
+      "name": "Verify OTP",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          },
+          {
+            "key": "X-Request-ID",
+            "value": "{{$guid}}"
+          }
+        ],
+        "url": {
+          "raw": "http://localhost:8080/api/v1/verifyOtp",
+          "protocol": "http",
+          "host": ["localhost"],
+          "port": "8080",
+          "path": ["api", "v1", "verifyOtp"]
+        },
+        "body": {
+          "mode": "raw",
+          "raw": "{\n\t\"phone\": \"+1234567890\",\n\t\"hash\": \"received_hash\",\n\t\"otp\": \"123456\"\n}"
+        }
+      }
+    },
+    {
+      "name": "Check Login",
+      "request": {
+        "method": "GET",
+        "header": [
+          {
+            "key": "X-Request-ID",
+            "value": "{{$guid}}"
+          }
+        ],
+        "url": {
+          "raw": "http://localhost:8080/api/v1/login",
+          "protocol": "http",
+          "host": ["localhost"],
+          "port": "8080",
+          "path": ["api", "v1", "login"]
+        }
+      }
+    },
+    {
+      "name": "Refresh Token",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "X-Request-ID",
+            "value": "{{$guid}}"
+          }
+        ],
+        "url": {
+          "raw": "http://localhost:8080/api/v1/refreshToken",
+          "protocol": "http",
+          "host": ["localhost"],
+          "port": "8080",
+          "path": ["api", "v1", "refreshToken"]
+        }
+      }
+    },
+    {
+      "name": "Logout",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "X-Request-ID",
+            "value": "{{$guid}}"
+          }
+        ],
+        "url": {
+          "raw": "http://localhost:8080/api/v1/logout",
+          "protocol": "http",
+          "host": ["localhost"],
+          "port": "8080",
+          "path": ["api", "v1", "logout"]
+        }
+      }
+    }
+  ]
+} 

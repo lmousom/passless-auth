@@ -9,7 +9,8 @@ server:
 
 # JWT configuration
 jwt:
-  secret: "your-32-character-secret-key-here"
+  secret:
+    value: "ENC[your-encrypted-jwt-secret-here]"
   token_lifetime: "24h"
   issuer: "passless-auth"
 
@@ -26,8 +27,10 @@ security:
 # SMS configuration
 sms:
   provider: "twilio"
-  account_sid: "your-twilio-account-sid"
-  auth_token: "your-twilio-auth-token"
+  account_sid:
+    value: "ENC[your-encrypted-account-sid-here]"
+  auth_token:
+    value: "ENC[your-encrypted-auth-token-here]"
   from_number: "+1234567890"
   template_id: ""
 

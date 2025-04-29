@@ -18,9 +18,9 @@ type Config struct {
 
 	// JWT configuration
 	JWT struct {
-		Secret        string        `mapstructure:"secret" validate:"required,min=32"`
-		TokenLifetime time.Duration `mapstructure:"token_lifetime" validate:"required"`
-		Issuer        string        `mapstructure:"issuer" validate:"required"`
+		Secret        EncryptedValue `mapstructure:"secret" validate:"required"`
+		TokenLifetime time.Duration  `mapstructure:"token_lifetime" validate:"required"`
+		Issuer        string         `mapstructure:"issuer" validate:"required"`
 	}
 
 	// Security configuration
@@ -37,11 +37,11 @@ type Config struct {
 
 	// SMS configuration
 	SMS struct {
-		Provider   string `mapstructure:"provider" validate:"required,oneof=twilio"`
-		AccountSID string `mapstructure:"account_sid" validate:"required"`
-		AuthToken  string `mapstructure:"auth_token" validate:"required"`
-		FromNumber string `mapstructure:"from_number" validate:"required"`
-		TemplateID string `mapstructure:"template_id"`
+		Provider   string         `mapstructure:"provider" validate:"required,oneof=twilio"`
+		AccountSID EncryptedValue `mapstructure:"account_sid" validate:"required"`
+		AuthToken  EncryptedValue `mapstructure:"auth_token" validate:"required"`
+		FromNumber string         `mapstructure:"from_number" validate:"required"`
+		TemplateID string         `mapstructure:"template_id"`
 	}
 
 	// Logging configuration
@@ -64,4 +64,19 @@ type Config struct {
 		ServiceName string `mapstructure:"service_name" validate:"required_if=Enabled true"`
 		Endpoint    string `mapstructure:"endpoint" validate:"required_if=Enabled true"`
 	}
+}
+
+// GetDecryptedJWTSecret returns the decrypted JWT secret
+func (c *Config) GetDecryptedJWTSecret() (string, error) {
+	return c.JWT.Secret.Decrypt()
+}
+
+// GetDecryptedSMSAccountSID returns the decrypted SMS account SID
+func (c *Config) GetDecryptedSMSAccountSID() (string, error) {
+	return c.SMS.AccountSID.Decrypt()
+}
+
+// GetDecryptedSMSAuthToken returns the decrypted SMS auth token
+func (c *Config) GetDecryptedSMSAuthToken() (string, error) {
+	return c.SMS.AuthToken.Decrypt()
 }

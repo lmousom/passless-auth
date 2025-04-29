@@ -30,7 +30,8 @@ A Go-based passwordless authentication system using OTP (One-Time Password) with
 
 ```
 ├── cmd/
-│   └── server/          # Application entry point
+│   ├── server/          # Application entry point
+│   └── encrypt/         # Configuration encryption utility
 ├── internal/
 │   ├── api/
 │   │   ├── handlers/    # Request handlers
@@ -70,6 +71,142 @@ go run cmd/server/main.go
 ```
 
 The server will start on `http://localhost:8080`
+
+## Configuration Management
+
+### Configuration File
+
+The application uses YAML configuration files. A default configuration file is provided at `config/config.yaml`:
+
+```yaml
+# Server configuration
+server:
+  port: "8080"
+  environment: "development"
+  allow_origins: "*"
+  read_timeout: "5s"
+  write_timeout: "10s"
+  idle_timeout: "120s"
+
+# JWT configuration
+jwt:
+  secret:
+    value: "ENC[your-encrypted-jwt-secret-here]"
+  token_lifetime: "24h"
+  issuer: "passless-auth"
+
+# Security configuration
+security:
+  max_login_attempts: 3
+  lockout_duration: "15m"
+  otp_length: 6
+  otp_expiry: "5m"
+  rate_limit:
+    requests_per_minute: 20
+    burst_size: 5
+
+# SMS configuration
+sms:
+  provider: "twilio"
+  account_sid:
+    value: "ENC[your-encrypted-account-sid-here]"
+  auth_token:
+    value: "ENC[your-encrypted-auth-token-here]"
+  from_number: "+1234567890"
+  template_id: ""
+
+# Logging configuration
+logging:
+  level: "info"
+  format: "json"
+  output_path: ""
+
+# Metrics configuration
+metrics:
+  enabled: false
+  port: "9090"
+  path: "/metrics"
+
+# Tracing configuration
+tracing:
+  enabled: false
+  service_name: "passless-auth"
+  endpoint: "http://localhost:4317"
+```
+
+### Environment Variables
+
+Configuration can be overridden using environment variables:
+
+```bash
+export PASSLESS_SERVER_PORT=8080
+export PASSLESS_JWT_SECRET=your-secret
+export PASSLESS_SMS_ACCOUNT_SID=your-sid
+```
+
+### Configuration Hot-Reloading
+
+The application supports hot-reloading of configuration changes:
+
+1. Changes to the configuration file are automatically detected
+2. The server gracefully restarts with the new configuration
+3. Existing connections are preserved
+4. Invalid configurations are rejected
+
+## Encryption System
+
+### Key Management
+
+The application uses AES-GCM encryption for sensitive values. Keys can be managed using the encryption utility:
+
+1. Generate a new key:
+```bash
+go run cmd/encrypt/main.go -generate-key
+```
+
+2. Rotate keys:
+```bash
+go run cmd/encrypt/main.go -rotate-key
+```
+
+3. Encrypt a value:
+```bash
+go run cmd/encrypt/main.go -value "your-secret-value"
+```
+
+### Key Rotation
+
+The system supports multiple active keys for smooth rotation:
+
+1. Set multiple keys using environment variable:
+```bash
+export PASSLESS_ENCRYPTION_KEYS='[
+  {
+    "id": "key_123",
+    "key": "base64-encoded-key",
+    "created_at": "2024-03-14T12:00:00Z",
+    "active": true
+  }
+]'
+```
+
+2. Or use a single key:
+```bash
+export PASSLESS_ENCRYPTION_KEY="your-base64-encoded-key"
+```
+
+### Encrypted Values
+
+Sensitive values in the configuration are encrypted using the format:
+```
+ENC[base64-encoded-encrypted-value]
+```
+
+The system automatically:
+- Encrypts new values with the primary key
+- Decrypts values using the appropriate key
+- Falls back to older keys if needed
+- Tracks key usage with versioning
 
 ## Security Features
 

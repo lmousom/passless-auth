@@ -20,15 +20,25 @@ func (tm *TokenManager) GenerateToken(phone string) (string, error) {
 		NotBefore: jwt.NewNumericDate(time.Now()),
 	}
 
+	secret, err := tm.config.GetDecryptedJWTSecret()
+	if err != nil {
+		return "", err
+	}
+
 	token := jwt.NewWithClaims(jwt.SigningMethodHS256, claims)
-	return token.SignedString([]byte(tm.config.JWT.Secret))
+	return token.SignedString([]byte(secret))
 }
 
 func (tm *TokenManager) ValidateToken(tokenString string) (*jwt.Token, error) {
+	secret, err := tm.config.GetDecryptedJWTSecret()
+	if err != nil {
+		return nil, err
+	}
+
 	return jwt.Parse(tokenString, func(token *jwt.Token) (interface{}, error) {
 		if _, ok := token.Method.(*jwt.SigningMethodHMAC); !ok {
 			return nil, jwt.ErrSignatureInvalid
 		}
-		return []byte(tm.config.JWT.Secret), nil
+		return []byte(secret), nil
 	})
 }

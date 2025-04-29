@@ -1,0 +1,50 @@
+# Server configuration
+server:
+  port: "8080"
+  environment: "development"
+  allow_origins: "*"
+  read_timeout: "5s"
+  write_timeout: "10s"
+  idle_timeout: "120s"
+
+# JWT configuration
+jwt:
+  secret: "your-32-character-secret-key-here"
+  token_lifetime: "24h"
+  issuer: "passless-auth"
+
+# Security configuration
+security:
+  max_login_attempts: 3
+  lockout_duration: "15m"
+  otp_length: 6
+  otp_expiry: "5m"
+  rate_limit:
+    requests_per_minute: 20
+    burst_size: 5
+
+# SMS configuration
+sms:
+  provider: "twilio"
+  account_sid: "your-twilio-account-sid"
+  auth_token: "your-twilio-auth-token"
+  from_number: "+1234567890"
+  template_id: ""
+
+# Logging configuration
+logging:
+  level: "info"
+  format: "json"
+  output_path: ""
+
+# Metrics configuration
+metrics:
+  enabled: false
+  port: "9090"
+  path: "/metrics"
+
+# Tracing configuration
+tracing:
+  enabled: false
+  service_name: "passless-auth"
+  endpoint: "http://localhost:4317" 

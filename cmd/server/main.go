@@ -83,6 +83,7 @@ func main() {
 					log.Printf("Server failed to start: %v", err)
 				}
 			}()
+			log.Printf("Server restarted on :%s", newCfg.Server.Port)
 		}
 	}()
 

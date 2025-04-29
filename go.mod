@@ -5,6 +5,7 @@ go 1.22.0
 toolchain go1.24.0
 
 require (
+	github.com/fsnotify/fsnotify v1.7.0
 	github.com/go-playground/validator/v10 v10.16.0
 	github.com/golang-jwt/jwt/v4 v4.5.0
 	github.com/gorilla/mux v1.8.1
@@ -19,7 +20,6 @@ require (
 require (
 	github.com/beorn7/perks v1.0.1 // indirect
 	github.com/cespare/xxhash/v2 v2.3.0 // indirect
-	github.com/fsnotify/fsnotify v1.7.0 // indirect
 	github.com/gabriel-vasile/mimetype v1.4.2 // indirect
 	github.com/go-logr/logr v1.4.2 // indirect
 	github.com/go-logr/stdr v1.2.2 // indirect

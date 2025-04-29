@@ -6,6 +6,7 @@ import (
 
 	"github.com/lmousom/passless-auth/internal/api/routes"
 	"github.com/lmousom/passless-auth/internal/config"
+	"github.com/lmousom/passless-auth/internal/middleware"
 )
 
 func main() {
@@ -15,8 +16,11 @@ func main() {
 		log.Fatalf("Failed to setup router: %v", err)
 	}
 
+	// Wrap the router with error handling middleware
+	handler := middleware.ErrorHandler(router)
+
 	log.Printf("Server starting on :8080")
-	if err := http.ListenAndServe(":8080", router); err != nil {
+	if err := http.ListenAndServe(":8080", handler); err != nil {
 		log.Fatalf("Server failed to start: %v", err)
 	}
 }

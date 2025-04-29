@@ -1,29 +1,26 @@
 package handlers
 
 import (
-	"fmt"
+	"encoding/json"
 	"net/http"
 
 	"github.com/golang-jwt/jwt/v4"
+	"github.com/lmousom/passless-auth/internal/errors"
+	"github.com/lmousom/passless-auth/internal/middleware"
 )
 
 func VerificationHandler(w http.ResponseWriter, r *http.Request) {
-
 	c, err := r.Cookie("token")
 	if err != nil {
 		if err == http.ErrNoCookie {
-			// If the cookie is not set, return an unauthorized status
-			w.WriteHeader(http.StatusUnauthorized)
+			middleware.ErrorResponse(w, errors.NewUnauthorized("No authentication token provided", nil))
 			return
 		}
-		w.WriteHeader(http.StatusBadRequest)
+		middleware.ErrorResponse(w, errors.NewInvalidRequest("Invalid cookie", err))
 		return
 	}
 
-	// Get the JWT string from the cookie
 	tokenStr := c.Value
-
-	// Initialize a new instance of `Claims`
 	claims := &Claims{}
 
 	token, err := jwt.ParseWithClaims(tokenStr, claims, func(token *jwt.Token) (interface{}, error) {
@@ -31,19 +28,26 @@ func VerificationHandler(w http.ResponseWriter, r *http.Request) {
 	})
 	if err != nil {
 		if err == jwt.ErrSignatureInvalid {
-			fmt.Println(err)
-			w.WriteHeader(http.StatusUnauthorized)
+			middleware.ErrorResponse(w, errors.NewUnauthorized("Invalid token signature", err))
 			return
 		}
-		fmt.Println(err)
-		w.WriteHeader(http.StatusBadRequest)
+		middleware.ErrorResponse(w, errors.NewInvalidRequest("Invalid token", err))
 		return
 	}
+
 	if !token.Valid {
-		w.WriteHeader(http.StatusUnauthorized)
+		middleware.ErrorResponse(w, errors.NewUnauthorized("Invalid token", nil))
 		return
 	}
 
-	w.Write([]byte(fmt.Sprintf("Welcome %s!", claims.Phone)))
+	response := map[string]string{
+		"message": "Welcome " + claims.Phone + "!",
+		"status":  "success",
+	}
 
+	w.Header().Set("Content-Type", "application/json")
+	if err := json.NewEncoder(w).Encode(response); err != nil {
+		middleware.ErrorResponse(w, errors.NewInternalServer("Failed to encode response", err))
+		return
+	}
 }

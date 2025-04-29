@@ -7,6 +7,8 @@ import (
 	"time"
 
 	"github.com/golang-jwt/jwt/v4"
+	"github.com/lmousom/passless-auth/internal/errors"
+	"github.com/lmousom/passless-auth/internal/middleware"
 	"github.com/lmousom/passless-auth/models/verifydata"
 	"github.com/lmousom/passless-auth/utils"
 )
@@ -18,11 +20,18 @@ type Claims struct {
 	jwt.RegisteredClaims
 }
 
-func VerifyOtp(verifyOtpRequest verifydata.VerifyOtpRequest, w http.ResponseWriter) verifydata.VerifyOtpResponse {
+func VerifyOtp(verifyOtpRequest verifydata.VerifyOtpRequest) (*verifydata.VerifyOtpResponse, string, error) {
+	if verifyOtpRequest.Phone == "" || verifyOtpRequest.Hash == "" || verifyOtpRequest.Otp == "" {
+		return nil, "", errors.NewInvalidRequest("Phone, hash, and OTP are required", nil)
+	}
+
 	f := func(c rune) bool {
 		return c == '.'
 	}
 	extValue := strings.FieldsFunc(verifyOtpRequest.Hash, f)
+	if len(extValue) != 2 {
+		return nil, "", errors.NewInvalidRequest("Invalid hash format", nil)
+	}
 
 	hashValue := extValue[0]
 	expiresIn := extValue[1]
@@ -30,7 +39,15 @@ func VerifyOtp(verifyOtpRequest verifydata.VerifyOtpRequest, w http.ResponseWrit
 	now := time.Now()
 	expiredInTime, err := utils.MsToTime(expiresIn)
 	if err != nil {
-		panic(err)
+		return nil, "", errors.NewInvalidRequest("Invalid expiry time", err)
+	}
+
+	if now.After(expiredInTime) {
+		return nil, "", errors.NewOTPExpired("OTP has expired", nil)
+	}
+
+	if hashValue != utils.Encrypt([]byte(verifyOtpRequest.Phone+"."+verifyOtpRequest.Otp+"."+expiresIn)) {
+		return nil, "", errors.NewInvalidOTP("Invalid OTP", nil)
 	}
 
 	claims := &Claims{
@@ -41,43 +58,40 @@ func VerifyOtp(verifyOtpRequest verifydata.VerifyOtpRequest, w http.ResponseWrit
 	}
 
 	token := jwt.NewWithClaims(jwt.SigningMethodHS256, claims)
-	// Create the JWT string
 	tokenString, err := token.SignedString(jwtKey)
 	if err != nil {
-		w.WriteHeader(http.StatusInternalServerError)
+		return nil, "", errors.NewInternalServer("Failed to generate token", err)
 	}
 
-	http.SetCookie(w, &http.Cookie{
-		Name:    "token",
-		Value:   tokenString,
-		Expires: expiredInTime,
-	})
-
-	if now.After(expiredInTime) {
-		return verifydata.VerifyOtpResponse{Status: "error", Message: "OTP Expired"}
-	}
-
-	if hashValue == utils.Encrypt([]byte(verifyOtpRequest.Phone+"."+verifyOtpRequest.Otp+"."+expiresIn)) {
-		return verifydata.VerifyOtpResponse{Status: "success", Message: "OTP verified successfully"}
-	} else {
-
-		return verifydata.VerifyOtpResponse{Status: "error", Message: "OTP Invalid"}
-	}
-
+	return &verifydata.VerifyOtpResponse{
+		Status:  "success",
+		Message: "OTP verified successfully",
+	}, tokenString, nil
 }
 
 func VerifyOtpHandler(w http.ResponseWriter, r *http.Request) {
-	decoder := json.NewDecoder(r.Body)
 	var verifyOtpRequest verifydata.VerifyOtpRequest
-	err := decoder.Decode(&verifyOtpRequest)
-	if err != nil {
-		w.WriteHeader(http.StatusBadRequest)
-		panic(err)
+	if err := json.NewDecoder(r.Body).Decode(&verifyOtpRequest); err != nil {
+		middleware.ErrorResponse(w, errors.NewInvalidRequest("Invalid request body", err))
+		return
 	}
 
+	response, tokenString, err := VerifyOtp(verifyOtpRequest)
+	if err != nil {
+		middleware.ErrorResponse(w, err)
+		return
+	}
+
+	// Set the token cookie
+	http.SetCookie(w, &http.Cookie{
+		Name:    "token",
+		Value:   tokenString,
+		Expires: time.Now().Add(24 * time.Hour), // Set a reasonable expiry time
+	})
+
 	w.Header().Set("Content-Type", "application/json")
-
-	res := VerifyOtp(verifyOtpRequest, w)
-
-	json.NewEncoder(w).Encode(res)
+	if err := json.NewEncoder(w).Encode(response); err != nil {
+		middleware.ErrorResponse(w, errors.NewInternalServer("Failed to encode response", err))
+		return
+	}
 }

@@ -15,11 +15,15 @@ import (
 )
 
 func main() {
-	// Load configuration
-	cfg, err := config.LoadConfig()
+	// Initialize configuration manager
+	cfgManager, err := config.NewConfigManager()
 	if err != nil {
-		log.Fatalf("Failed to load configuration: %v", err)
+		log.Fatalf("Failed to initialize configuration manager: %v", err)
 	}
+	defer cfgManager.Close()
+
+	// Get initial configuration
+	cfg := cfgManager.GetConfig()
 
 	// Setup router
 	router, err := routes.SetupRouter(cfg)
@@ -44,6 +48,41 @@ func main() {
 		log.Printf("Server starting on :%s", cfg.Server.Port)
 		if err := server.ListenAndServe(); err != nil && err != http.ErrServerClosed {
 			log.Fatalf("Server failed to start: %v", err)
+		}
+	}()
+
+	// Subscribe to configuration changes
+	configChan := cfgManager.Subscribe()
+	defer cfgManager.Unsubscribe(configChan)
+
+	// Handle configuration changes
+	go func() {
+		for newCfg := range configChan {
+			log.Printf("Configuration updated, restarting server...")
+
+			// Create new server with updated configuration
+			newServer := &http.Server{
+				Addr:         ":" + newCfg.Server.Port,
+				Handler:      handler,
+				ReadTimeout:  newCfg.Server.ReadTimeout,
+				WriteTimeout: newCfg.Server.WriteTimeout,
+				IdleTimeout:  newCfg.Server.IdleTimeout,
+			}
+
+			// Gracefully shutdown old server
+			ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
+			if err := server.Shutdown(ctx); err != nil {
+				log.Printf("Error shutting down server: %v", err)
+			}
+			cancel()
+
+			// Start new server
+			server = newServer
+			go func() {
+				if err := server.ListenAndServe(); err != nil && err != http.ErrServerClosed {
+					log.Printf("Server failed to start: %v", err)
+				}
+			}()
 		}
 	}()
 

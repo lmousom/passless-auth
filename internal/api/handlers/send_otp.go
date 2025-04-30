@@ -3,7 +3,6 @@ package handlers
 import (
 	"crypto/rand"
 	"encoding/json"
-	"fmt"
 	"io"
 	"net/http"
 	"strconv"
@@ -11,13 +10,24 @@ import (
 
 	"github.com/lmousom/passless-auth/internal/errors"
 	"github.com/lmousom/passless-auth/internal/middleware"
+	"github.com/lmousom/passless-auth/internal/services/sms"
 	"github.com/lmousom/passless-auth/models/otpdata"
 	"github.com/lmousom/passless-auth/utils"
 )
 
 var table = []byte{'1', '2', '3', '4', '5', '6', '7', '8', '9', '0'}
 
-func SendOtp(phonenumber string) (*otpdata.SendOtpResponse, error) {
+type SendOtpHandler struct {
+	smsService *sms.TwilioService
+}
+
+func NewSendOtpHandler(smsService *sms.TwilioService) *SendOtpHandler {
+	return &SendOtpHandler{
+		smsService: smsService,
+	}
+}
+
+func (h *SendOtpHandler) SendOtp(phonenumber string) (*otpdata.SendOtpResponse, error) {
 	if phonenumber == "" {
 		return nil, errors.NewInvalidRequest("Phone number is required", nil)
 	}
@@ -29,6 +39,11 @@ func SendOtp(phonenumber string) (*otpdata.SendOtpResponse, error) {
 	hash := utils.Encrypt([]byte(data))
 	fullhash := hash + "." + strconv.FormatInt(expiresIn, 10)
 
+	// Send OTP via Twilio
+	if err := h.smsService.SendOTP(phonenumber, otp); err != nil {
+		return nil, errors.NewInternalServer("Failed to send OTP", err)
+	}
+
 	response := &otpdata.SendOtpResponse{
 		Status:  "success",
 		Message: "OTP sent successfully",
@@ -36,19 +51,17 @@ func SendOtp(phonenumber string) (*otpdata.SendOtpResponse, error) {
 		Hash:    fullhash,
 	}
 
-	// TODO: Implement actual SMS sending
-	fmt.Println(otp)
 	return response, nil
 }
 
-func SendOtpHandler(w http.ResponseWriter, r *http.Request) {
+func (h *SendOtpHandler) Handle(w http.ResponseWriter, r *http.Request) {
 	var sendOtpRequest otpdata.SendOtpRequest
 	if err := json.NewDecoder(r.Body).Decode(&sendOtpRequest); err != nil {
 		middleware.ErrorResponse(w, errors.NewInvalidRequest("Invalid request body", err))
 		return
 	}
 
-	response, err := SendOtp(sendOtpRequest.Phone)
+	response, err := h.SendOtp(sendOtpRequest.Phone)
 	if err != nil {
 		middleware.ErrorResponse(w, err)
 		return

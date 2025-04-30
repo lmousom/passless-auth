@@ -39,6 +39,7 @@ A Go-based passwordless authentication system using OTP (One-Time Password) with
 │   ├── auth/            # Authentication logic
 │   ├── config/          # Configuration
 │   ├── middleware/      # Security middleware
+│   ├── services/        # External services (SMS, etc.)
 │   └── models/          # Data models
 ├── pkg/                 # Public packages
 └── README.md
@@ -65,7 +66,25 @@ Create a configuration file or set environment variables for:
 - OTP length and expiry
 - Security parameters
 
-4. Run the server:
+4. Set up encryption:
+```bash
+# Generate encryption key
+go run cmd/encrypt/main.go -generate-key
+
+# Set the encryption key in your environment
+export PASSLESS_ENCRYPTION_KEY="your-generated-key"
+
+# Encrypt Twilio credentials
+go run cmd/encrypt/main.go -key "your-generated-key" -value "your-account-sid"
+go run cmd/encrypt/main.go -key "your-generated-key" -value "your-auth-token"
+```
+
+5. Configure the application:
+   - Update `config/config.yaml` with your encrypted credentials
+   - Set your Twilio phone number in the SMS configuration
+   - Adjust other settings as needed
+
+6. Run the server:
 ```bash
 go run cmd/server/main.go
 ```
@@ -91,7 +110,7 @@ server:
 # JWT configuration
 jwt:
   secret:
-    value: "ENC[your-encrypted-jwt-secret-here]"
+    value: "ENC[your-encrypted-jwt-secret]"
   token_lifetime: "24h"
   issuer: "passless-auth"
 
@@ -109,10 +128,10 @@ security:
 sms:
   provider: "twilio"
   account_sid:
-    value: "ENC[your-encrypted-account-sid-here]"
+    value: "ENC[your-encrypted-account-sid]"
   auth_token:
-    value: "ENC[your-encrypted-auth-token-here]"
-  from_number: "+1234567890"
+    value: "ENC[your-encrypted-auth-token]"
+  from_number: "+1234567890"  # Your Twilio phone number
   template_id: ""
 
 # Logging configuration
@@ -142,6 +161,7 @@ Configuration can be overridden using environment variables:
 export PASSLESS_SERVER_PORT=8080
 export PASSLESS_JWT_SECRET=your-secret
 export PASSLESS_SMS_ACCOUNT_SID=your-sid
+export PASSLESS_ENCRYPTION_KEY=your-encryption-key
 ```
 
 ### Configuration Hot-Reloading
@@ -215,6 +235,8 @@ The system automatically:
 - Request logging with timing information
 - JWT-based session management
 - Cryptographically secure OTP generation
+- Encrypted configuration values
+- Twilio SMS integration for secure OTP delivery
 
 ## API Endpoints
 

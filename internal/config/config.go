@@ -33,6 +33,14 @@ type Config struct {
 			RequestsPerMinute int `mapstructure:"requests_per_minute" validate:"required,min=1"`
 			BurstSize         int `mapstructure:"burst_size" validate:"required,min=1"`
 		} `mapstructure:"rate_limit"`
+		TwoFactor struct {
+			Enabled   bool   `mapstructure:"enabled" validate:"required"`
+			Issuer    string `mapstructure:"issuer" validate:"required"`
+			Algorithm string `mapstructure:"algorithm" validate:"required,oneof=SHA1 SHA256 SHA512"`
+			Digits    int    `mapstructure:"digits" validate:"required,min=6,max=8"`
+			Period    int    `mapstructure:"period" validate:"required,min=30"`
+			Skew      int    `mapstructure:"skew" validate:"required,min=1"`
+		} `mapstructure:"two_factor"`
 	}
 
 	// SMS configuration
@@ -64,6 +72,24 @@ type Config struct {
 		ServiceName string `mapstructure:"service_name" validate:"required_if=Enabled true"`
 		Endpoint    string `mapstructure:"endpoint" validate:"required_if=Enabled true"`
 	}
+
+	// Redis configuration
+	Redis struct {
+		Host         string         `mapstructure:"host"`
+		Port         string         `mapstructure:"port"`
+		Password     string         `mapstructure:"password"`
+		DB           int            `mapstructure:"db"`
+		PoolSize     int            `mapstructure:"pool_size"`
+		MinIdleConns int            `mapstructure:"min_idle_conns"`
+		MaxRetries   int            `mapstructure:"max_retries"`
+		KeyPrefix    string         `mapstructure:"key_prefix"`
+		TTL          RedisTTLConfig `mapstructure:"ttl"`
+	}
+}
+
+type RedisTTLConfig struct {
+	TwoFASecret   time.Duration `mapstructure:"twofa_secret"`
+	TwoFAAttempts time.Duration `mapstructure:"twofa_attempts"`
 }
 
 // GetDecryptedJWTSecret returns the decrypted JWT secret

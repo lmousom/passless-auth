@@ -10,7 +10,7 @@ server:
 # JWT configuration
 jwt:
   secret:
-    value: "ENC[your-encrypted-jwt-secret-here]"
+    value: "ENC[2mcF/wwb8wk9M6bIaVfXCxdys0Zkeby4qErkVLzTcltp+3I6Q0VvH+gHydfdwe]"
   token_lifetime: "24h"
   issuer: "passless-auth"
 
@@ -23,15 +23,36 @@ security:
   rate_limit:
     requests_per_minute: 20
     burst_size: 5
+  two_factor:
+    enabled: true
+    issuer: "Passless Auth"
+    algorithm: "SHA1"
+    digits: 6
+    period: 30
+    skew: 1
+
+# Redis configuration
+redis:
+  host: "redis"
+  port: "6379"
+  password: ""
+  db: 0
+  pool_size: 10
+  min_idle_conns: 5
+  max_retries: 3
+  key_prefix: "passless:"
+  ttl:
+    twofa_secret: "24h"
+    twofa_attempts: "5m"
 
 # SMS configuration
 sms:
   provider: "twilio"
   account_sid:
-    value: "ENC[your-encrypted-account-sid-here]"
+    value: "ENC[gonVCTcByr2ZgHnMwiQ9z/gpFP6PrsYezwdAdvTdGcu3Vub9vmRWByBL2TJWJRHDfRpo=]"
   auth_token:
-    value: "ENC[your-encrypted-auth-token-here]"
-  from_number: "+1234567890"
+    value: "ENC[gGlFQlCkvQD6AkjfozUER3/4biT1Wjlljd+AnT7s7eWMAOiQdktQZEvy6g2dnF6c7tJGt/jz]"
+  from_number: "+16052504547"
   template_id: ""
 
 # Logging configuration
@@ -42,12 +63,12 @@ logging:
 
 # Metrics configuration
 metrics:
-  enabled: false
+  enabled: true
   port: "9090"
   path: "/metrics"
 
 # Tracing configuration
 tracing:
-  enabled: false
+  enabled: true
   service_name: "passless-auth"
   endpoint: "http://localhost:4317" 

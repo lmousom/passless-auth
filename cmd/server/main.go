@@ -12,6 +12,7 @@ import (
 	"github.com/lmousom/passless-auth/internal/api/routes"
 	"github.com/lmousom/passless-auth/internal/config"
 	"github.com/lmousom/passless-auth/internal/middleware"
+	"github.com/prometheus/client_golang/prometheus/promhttp"
 )
 
 func main() {
@@ -41,6 +42,22 @@ func main() {
 		ReadTimeout:  cfg.Server.ReadTimeout,
 		WriteTimeout: cfg.Server.WriteTimeout,
 		IdleTimeout:  cfg.Server.IdleTimeout,
+	}
+
+	// Start metrics server if enabled
+	if cfg.Metrics.Enabled {
+		metricsMux := http.NewServeMux()
+		metricsMux.Handle(cfg.Metrics.Path, promhttp.Handler())
+		metricsServer := &http.Server{
+			Addr:    ":" + cfg.Metrics.Port,
+			Handler: metricsMux,
+		}
+		go func() {
+			log.Printf("Metrics server starting on :%s%s", cfg.Metrics.Port, cfg.Metrics.Path)
+			if err := metricsServer.ListenAndServe(); err != nil && err != http.ErrServerClosed {
+				log.Printf("Metrics server failed to start: %v", err)
+			}
+		}()
 	}
 
 	// Start server in a goroutine

@@ -116,6 +116,102 @@
           "path": ["api", "v1", "logout"]
         }
       }
+    },
+    {
+      "name": "Enable 2FA",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          },
+          {
+            "key": "X-Request-ID",
+            "value": "{{$guid}}"
+          },
+          {
+            "key": "Authorization",
+            "value": "Bearer {{access_token}}"
+          }
+        ],
+        "url": {
+          "raw": "http://localhost:8080/api/v1/2fa/enable",
+          "protocol": "http",
+          "host": ["localhost"],
+          "port": "8080",
+          "path": ["api", "v1", "2fa", "enable"]
+        },
+        "body": {
+          "mode": "raw",
+          "raw": "{\n\t\"phone\": \"+1234567890\"\n}"
+        },
+        "description": "Enable two-factor authentication for the user"
+      }
+    },
+    {
+      "name": "Verify 2FA",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          },
+          {
+            "key": "X-Request-ID",
+            "value": "{{$guid}}"
+          },
+          {
+            "key": "Authorization",
+            "value": "Bearer {{access_token}}"
+          }
+        ],
+        "url": {
+          "raw": "http://localhost:8080/api/v1/2fa/verify",
+          "protocol": "http",
+          "host": ["localhost"],
+          "port": "8080",
+          "path": ["api", "v1", "2fa", "verify"]
+        },
+        "body": {
+          "mode": "raw",
+          "raw": "{\n\t\"otp\": \"123456\"\n}"
+        },
+        "description": "Verify two-factor authentication code"
+      }
+    },
+    {
+      "name": "Disable 2FA",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          },
+          {
+            "key": "X-Request-ID",
+            "value": "{{$guid}}"
+          },
+          {
+            "key": "Authorization",
+            "value": "Bearer {{access_token}}"
+          }
+        ],
+        "url": {
+          "raw": "http://localhost:8080/api/v1/2fa/disable",
+          "protocol": "http",
+          "host": ["localhost"],
+          "port": "8080",
+          "path": ["api", "v1", "2fa", "disable"]
+        },
+        "body": {
+          "mode": "raw",
+          "raw": "{\n\t\"otp\": \"123456\"\n}"
+        },
+        "description": "Disable two-factor authentication for the user"
+      }
     }
   ]
 } 

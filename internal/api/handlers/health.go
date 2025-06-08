@@ -6,8 +6,8 @@ import (
 )
 
 var (
-	version   = "1.0.0"
-	buildTime = "2024-03-14"
+	version   = "1.0.1"
+	buildTime = "2025-06-08"
 )
 
 type HealthStatus struct {

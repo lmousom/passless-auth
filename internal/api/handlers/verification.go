@@ -4,7 +4,7 @@ import (
 	"encoding/json"
 	"net/http"
 
-	"github.com/golang-jwt/jwt/v4"
+	"github.com/golang-jwt/jwt/v5"
 	"github.com/lmousom/passless-auth/internal/errors"
 	"github.com/lmousom/passless-auth/internal/middleware"
 )
@@ -37,6 +37,12 @@ func VerificationHandler(w http.ResponseWriter, r *http.Request) {
 
 	if !token.Valid {
 		middleware.ErrorResponse(w, errors.NewUnauthorized("Invalid token", nil))
+		return
+	}
+
+	// Check 2FA status
+	if claims.TwoFAEnabled && !claims.TwoFAVerified {
+		middleware.ErrorResponse(w, errors.NewUnauthorized("2FA verification required", nil))
 		return
 	}
 
